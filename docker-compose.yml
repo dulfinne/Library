@@ -1,0 +1,111 @@
+version: '3.8'
+services:
+
+  book-service:
+    build: ./book-service
+    container_name: book-service
+    ports:
+      - "8084:8084"  
+    depends_on:
+      - book-db
+      - kafka
+      - zookeeper
+      - kafka-ui
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://book-db:5432/bookservice_db
+      SPRING_DATASOURCE_USERNAME: db
+      SPRING_DATASOURCE_PASSWORD: 123
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+     - app-network
+
+  library-service:
+    build: ./library-service
+    container_name: library-service
+    ports:
+      - "8083:8083" 
+    depends_on:
+      - library-db
+      - kafka
+      - zookeeper
+      - kafka-ui
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://library-db:5432/libraryservice_db
+      SPRING_DATASOURCE_USERNAME: db
+      SPRING_DATASOURCE_PASSWORD: 123
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    networks:
+     - app-network
+
+  book-db:
+    image: postgres:15
+    container_name: book-db
+    environment:
+      POSTGRES_DB: bookservice_db
+      POSTGRES_USER: db
+      POSTGRES_PASSWORD: 123
+    ports:
+      - "5433:5432"
+    volumes:
+      - book-db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  library-db:
+    image: postgres:15
+    container_name: library-db
+    environment:
+      POSTGRES_DB: libraryservice_db
+      POSTGRES_USER: db
+      POSTGRES_PASSWORD: 123
+    ports:
+      - "5434:5432"
+    volumes:
+      - library-db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  kafka:
+      image: confluentinc/cp-kafka:6.0.14
+      depends_on:
+        - zookeeper
+      ports:
+        - '29092:29092'
+      environment:
+        KAFKA_BROKER_ID: 1
+        KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+        KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka:9092,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:29092
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+        KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      networks:
+      - app-network
+
+  kafka-ui:
+      image: provectuslabs/kafka-ui:latest
+      ports:
+        - 8085:8080
+      environment:
+        KAFKA_CLUSTERS_0_NAME: local
+        KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+        DYNAMIC_CONFIG_ENABLED: 'true'
+      networks:
+      - app-network
+
+  zookeeper:
+      image: confluentinc/cp-zookeeper:6.0.14
+      ports:
+        - '22181:2181'
+      environment:
+        ZOOKEEPER_CLIENT_PORT: 2181
+        ZOOKEEPER_TICK_TIME: 2000
+      networks:
+      - app-network
+
+volumes:
+  book-db-data:
+  library-db-data:
+
+networks:
+  app-network:
+    driver: bridge
