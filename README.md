@@ -130,7 +130,36 @@ docker-compose down
             "author": "Test Author"
      }
      ```
-## 5. **Удаление книги**
+     ## 5. **Изменение  уже существующей книги**
+   - **PUT**
+
+     ```
+     http://localhost:8084/book-service/api/v1/books/7
+     ```
+
+     ```http
+      {
+          "isbn": "123-4-56789-876-5",
+          "name": "I changed name",
+          "genre": "test genre",
+          "info": "test info",
+          "author": "Test Author"
+      }
+     ```
+   - **Ответ:**
+
+     ```http
+
+     {
+            "id": 7,
+            "isbn": "123-4-56789-876-5",
+            "name": "I changed name",
+            "genre": "test genre",
+            "info": "test info",
+            "author": "Test Author"
+     }
+     ```
+## 6. **Удаление книги**
    - **DELETE**
 
      ```
